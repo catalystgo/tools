@@ -96,3 +96,25 @@ func GetSymmetricallyDifferentKeys[K comparable, X any](a, b map[K]X) ([]K, []K)
 
 	return left, right
 }
+
+// SplitIntoBatches splits a slice into batches of a given size
+func SplitIntoBatches[X any](input []X, batchSize int) [][]X {
+	numBatches := len(input) / batchSize
+
+	// Add one more batch if there are remaining elements
+	// that do not fit into a full batch
+	if len(input)%batchSize != 0 {
+		numBatches++
+	}
+
+	result := make([][]X, 0, numBatches)
+	for i := 0; i < numBatches; i++ {
+		start := i * batchSize
+		end := (i + 1) * batchSize
+		if end > len(input) {
+			end = len(input)
+		}
+		result = append(result, input[start:end])
+	}
+	return result
+}

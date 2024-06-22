@@ -335,4 +335,53 @@ func TestHelpers(t *testing.T) {
 		require.Equal(t, []int64{1, 2}, left)
 		require.Equal(t, []int64{5, 6, 7}, right)
 	})
+
+	t.Run("split_into_batches", func(t *testing.T) {
+		t.Parallel()
+
+		testsCases := []struct {
+			name      string
+			input     []int
+			batchSize int
+			expected  [][]int
+		}{
+			{
+				name:      "empty",
+				input:     []int{},
+				batchSize: 2,
+				expected:  [][]int{},
+			},
+			{
+				name:      "single_batch",
+				input:     []int{1, 2, 3, 4, 5},
+				batchSize: 5,
+				expected:  [][]int{{1, 2, 3, 4, 5}},
+			},
+			{
+				name:      "multiple_batches_less_than_batch_size",
+				input:     []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+				batchSize: 3,
+				expected:  [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10}},
+			},
+			{
+				name:      "multiple_batches_equal_to_batch_size",
+				input:     []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+				batchSize: 2,
+				expected:  [][]int{{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10}},
+			},
+			{
+				name:      "multiple_batches_greater_than_batch_size",
+				input:     []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+				batchSize: 4,
+				expected:  [][]int{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10}},
+			},
+		}
+
+		for _, tt := range testsCases {
+			t.Run(tt.name, func(t *testing.T) {
+				result := SplitIntoBatches(tt.input, tt.batchSize)
+				require.Equal(t, tt.expected, result)
+			})
+		}
+	})
 }

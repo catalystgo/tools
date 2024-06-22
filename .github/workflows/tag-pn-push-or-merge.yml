@@ -1,0 +1,61 @@
+name: Tag on Push or Merge to Main
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+
+      - name: Get the latest tag
+        id: get_latest_tag
+        run: echo "::set-output name=tag::$(git describe --tags --abbrev=0)"
+
+      - name: Calculate new tag
+        id: calc_new_tag
+        run: |
+          latest_tag=${{ steps.get_latest_tag.outputs.tag }}
+          echo "Latest tag: $latest_tag"
+
+          # Assuming tags are in the format vX.Y.Z
+          # Extract the major, minor, and patch numbers
+          IFS='.' read -r major minor patch <<<"${latest_tag//v/}"
+
+          # Increment the patch number
+          new_patch=$((patch + 1))
+
+          # Create a new tag
+          new_tag="v$major.$minor.$new_patch"
+          echo "New tag: $new_tag"
+
+          echo "::set-output name=new_tag::$new_tag"
+
+      - name: Create new tag
+        run: |
+          new_tag=${{ steps.calc_new_tag.outputs.new_tag }}
+          git tag $new_tag
+
+      - name: Push new tag to repository
+        run: |
+          new_tag=${{ steps.calc_new_tag.outputs.new_tag }}
+          git push origin $new_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
